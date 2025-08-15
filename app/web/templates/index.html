@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuckAI - Premium AI Assistant</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+      color: #ffffff;
+      position: relative;
+    }
+
+    /* Animated Neural Network Background */
+    .network-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.6;
+    }
+
+    .network-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Header */
+    .header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 1.5rem 0;
+      background: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .logo {
+      font-size: 2.2rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #00d4ff, #7c3aed, #00ffa3);
+      background-size: 200% 200%;
+      animation: gradient-shift 3s ease infinite;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.3rem;
+    }
+
+    @keyframes gradient-shift {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .tagline {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 300;
+    }
+
+    /* Main Container */
+    .main-container {
+      position: relative;
+      z-index: 10;
+      height: calc(100vh - 100px);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Chat Container */
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(20, 20, 20, 0.7);
+      backdrop-filter: blur(25px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      height: 100%;
+    }
+
+    /* Chat Messages Area */
+    .chat-box {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .chat-box::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    /* Messages - Dynamic Sizing */
+    .message {
+      padding: 0.8rem 1.2rem;
+      border-radius: 18px;
+      position: relative;
+      animation: fadeInUp 0.3s ease;
+      line-height: 1.5;
+      word-wrap: break-word;
+      max-width: 70%;
+      width: fit-content;
+      min-width: 80px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .user-message {
+      background: linear-gradient(135deg, #00d4ff, #0099cc);
+      color: #ffffff;
+      align-self: flex-end;
+      margin-left: auto;
+      box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+      border-bottom-right-radius: 6px;
+    }
+
+    .ai-message {
+      background: rgba(35, 35, 35, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      align-self: flex-start;
+      position: relative;
+      border-bottom-left-radius: 6px;
+      padding-left: 2.8rem;
+    }
+
+    .ai-message::before {
+      content: '🤖';
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      background: rgba(0, 212, 255, 0.1);
+      padding: 0.3rem;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      width: 1.8rem;
+      height: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Input Form */
+    .chat-form {
+      padding: 1.5rem;
+      background: rgba(10, 10, 10, 0.6);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: rgba(30, 30, 30, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .input-container:focus-within {
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .chat-input {
+      flex: 1;
+      padding: 1rem 2rem;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 1rem;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .chat-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .send-button {
+      background: linear-gradient(45deg, #00d4ff, #7c3aed);
+      border: none;
+      color: white;
+      padding: 1rem 1.8rem;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 4px;
+    }
+
+    .send-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+    }
+
+    .send-button:active {
+      transform: translateY(0);
+    }
+
+    /* Loading Animation */
+    .loading {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+      margin-top: 0.8rem;
+      align-self: flex-start;
+    }
+
+    .loading-dots {
+      display: flex;
+      gap: 0.2rem;
+    }
+
+    .loading-dot {
+      width: 6px;
+      height: 6px;
+      background: #00d4ff;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .loading-dot:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    /* Welcome Message */
+    .welcome-message {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin: auto;
+      max-width: 500px;
+    }
+
+    .welcome-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      background: linear-gradient(45deg, #00d4ff, #7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-subtitle {
+      font-size: 1rem;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 1rem;
+      }
+
+      .logo {
+        font-size: 1.8rem;
+      }
+
+      .message {
+        max-width: 85%;
+      }
+
+      .header {
+        padding: 1rem 0;
+        height: 80px;
+      }
+
+      .main-container {
+        height: calc(100vh - 80px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Neural Network Background -->
+  <div class="network-container">
+    <canvas class="network-canvas" id="networkCanvas"></canvas>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">DuckAI</div>
+    <div class="tagline">Your Premium AI Assistant</div>
+  </header>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <div class="chat-container">
+      <div class="chat-box" id="chat-box">
+        <div class="welcome-message">
+          <div class="welcome-title">Welcome to DuckAI</div>
+          <div class="welcome-subtitle">Ask me anything and I'll help you with intelligent, thoughtful responses. Let's
+            start a conversation!</div>
+        </div>
+      </div>
+
+      <form class="chat-form" id="chat-form">
+        <div class="input-container">
+          <input type="text" class="chat-input" id="user-input" placeholder="Type your message here..."
+            autocomplete="off">
+          <button type="submit" class="send-button">
+            <i class="fas fa-paper-plane"></i>
+            Send
+          </button>
+        </div>
+
+        <div class="loading" id="loading">
+          <span>AI is thinking</span>
+          <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Neural Network Background System
+    class NeuralNetwork {
+      constructor() {
+        this.canvas = document.getElementById('networkCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.nodes = [];
+        this.connections = [];
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.animationId = null;
+
+        this.setupCanvas();
+        this.createNodes();
+        this.createConnections();
+        this.init();
+      }
+
+      setupCanvas() {
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+      }
+
+      resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+
+      createNodes() {
+        this.nodes = [];
+        const nodeCount = Math.floor((window.innerWidth * window.innerHeight) / 15000);
+
+        for (let i = 0; i < nodeCount; i++) {
+          this.nodes.push({
+            x: Math.random() * this.canvas.width,
+            y: Math.random() * this.canvas.height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5,
+            radius: Math.random() * 2 + 1,
+            opacity: Math.random() * 0.5 + 0.3
+          });
+        }
+      }
+
+      createConnections() {
+        this.connections = [];
+        const maxDistance = 120;
+
+        for (let i = 0; i < this.nodes.length; i++) {
+          for (let j = i + 1; j < this.nodes.length; j++) {
+            const distance = this.getDistance(this.nodes[i], this.nodes[j]);
+            if (distance < maxDistance) {
+              this.connections.push({
+                node1: this.nodes[i],
+                node2: this.nodes[j],
+                distance: distance,
+                maxDistance: maxDistance
+              });
+            }
+          }
+        }
+      }
+
+      getDistance(node1, node2) {
+        return Math.sqrt(Math.pow(node1.x - node2.x, 2) + Math.pow(node1.y - node2.y, 2));
+      }
+
+      updateNodes() {
+        this.nodes.forEach(node => {
+          // Mouse interaction
+          const mouseDistance = Math.sqrt(
+            Math.pow(node.x - this.mouseX, 2) +
+            Math.pow(node.y - this.mouseY, 2)
+          );
+
+          if (mouseDistance < 100) {
+            const force = (100 - mouseDistance) / 100;
+            const angle = Math.atan2(node.y - this.mouseY, node.x - this.mouseX);
+            node.vx += Math.cos(angle) * force * 0.02;
+            node.vy += Math.sin(angle) * force * 0.02;
+          }
+
+          // Update position
+          node.x += node.vx;
+          node.y += node.vy;
+
+          // Boundary collision
+          if (node.x < 0 || node.x > this.canvas.width) {
+            node.vx *= -0.8;
+            node.x = Math.max(0, Math.min(this.canvas.width, node.x));
+          }
+          if (node.y < 0 || node.y > this.canvas.height) {
+            node.vy *= -0.8;
+            node.y = Math.max(0, Math.min(this.canvas.height, node.y));
+          }
+
+          // Damping
+          node.vx *= 0.99;
+          node.vy *= 0.99;
+        });
+
+        // Update connections
+        this.connections.forEach(connection => {
+          connection.distance = this.getDistance(connection.node1, connection.node2);
+        });
+      }
+
+      draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw connections
+        this.connections.forEach(connection => {
+          if (connection.distance < connection.maxDistance) {
+            const opacity = 1 - (connection.distance / connection.maxDistance);
+            this.ctx.beginPath();
+            this.ctx.moveTo(connection.node1.x, connection.node1.y);
+            this.ctx.lineTo(connection.node2.x, connection.node2.y);
+            this.ctx.strokeStyle = `rgba(0, 212, 255, ${opacity * 0.3})`;
+            this.ctx.lineWidth = 0.5;
+            this.ctx.stroke();
+          }
+        });
+
+        // Draw nodes
+        this.nodes.forEach(node => {
+          const mouseDistance = Math.sqrt(
+            Math.pow(node.x - this.mouseX, 2) +
+            Math.pow(node.y - this.mouseY, 2)
+          );
+
+          let nodeOpacity = node.opacity;
+          let nodeRadius = node.radius;
+
+          if (mouseDistance < 80) {
+            const proximity = 1 - (mouseDistance / 80);
+            nodeOpacity += proximity * 0.5;
+            nodeRadius += proximity * 2;
+          }
+
+          this.ctx.beginPath();
+          this.ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
+
+          // Gradient fill
+          const gradient = this.ctx.createRadialGradient(
+            node.x, node.y, 0,
+            node.x, node.y, nodeRadius
+          );
+          gradient.addColorStop(0, `rgba(0, 212, 255, ${nodeOpacity})`);
+          gradient.addColorStop(1, `rgba(124, 58, 237, ${nodeOpacity * 0.3})`);
+
+          this.ctx.fillStyle = gradient;
+          this.ctx.fill();
+        });
+      }
+
+      animate() {
+        this.updateNodes();
+        this.draw();
+        this.animationId = requestAnimationFrame(() => this.animate());
+      }
+
+      init() {
+        // Mouse tracking
+        document.addEventListener('mousemove', (e) => {
+          this.mouseX = e.clientX;
+          this.mouseY = e.clientY;
+        });
+
+        // Start animation
+        this.animate();
+
+        // Recreate network on resize
+        window.addEventListener('resize', () => {
+          setTimeout(() => {
+            this.createNodes();
+            this.createConnections();
+          }, 100);
+        });
+      }
+
+      destroy() {
+        if (this.animationId) {
+          cancelAnimationFrame(this.animationId);
+        }
+      }
+    }
+
+    // Chat Functionality
+    class ChatInterface {
+      constructor() {
+        this.form = document.getElementById('chat-form');
+        this.input = document.getElementById('user-input');
+        this.chatBox = document.getElementById('chat-box');
+        this.loading = document.getElementById('loading');
+        this.init();
+      }
+
+      init() {
+        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+        this.input.focus();
+
+        this.input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.form.dispatchEvent(new Event('submit'));
+          }
+        });
+      }
+
+      async handleSubmit(e) {
+        e.preventDefault();
+        const userMessage = this.input.value.trim();
+        if (!userMessage) return;
+
+        // Clear welcome message on first interaction
+        if (this.chatBox.querySelector('.welcome-message')) {
+          this.chatBox.innerHTML = '';
+        }
+
+        this.addMessage(userMessage, 'user-message');
+        this.input.value = '';
+        this.showLoading(true);
+
+        try {
+          const response = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMessage })
+          });
+
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const data = await response.json();
+          this.showLoading(false);
+          this.addMessage(data.reply, 'ai-message');
+        } catch (error) {
+          this.showLoading(false);
+          this.addMessage('I apologize, but I\'m having trouble connecting right now. Please try again in a moment.', 'ai-message');
+        }
+      }
+
+      addMessage(text, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', className);
+        messageDiv.textContent = text;
+
+        this.chatBox.appendChild(messageDiv);
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+
+        // Smooth entrance animation
+        messageDiv.style.opacity = '0';
+        messageDiv.style.transform = 'translateY(20px)';
+
+        requestAnimationFrame(() => {
+          messageDiv.style.transition = 'all 0.3s ease';
+          messageDiv.style.opacity = '1';
+          messageDiv.style.transform = 'translateY(0)';
+        });
+      }
+
+      showLoading(show) {
+        if (show) {
+          this.loading.style.display = 'flex';
+          this.chatBox.appendChild(this.loading);
+          this.chatBox.scrollTop = this.chatBox.scrollHeight;
+        } else {
+          this.loading.style.display = 'none';
+          if (this.loading.parentNode === this.chatBox) {
+            this.chatBox.removeChild(this.loading);
+          }
+        }
+      }
+    }
+
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      new NeuralNetwork();
+      new ChatInterface();
+    });
+  </script>
+</body>
+
+</html>
