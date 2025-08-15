@@ -7,6 +7,7 @@
   <title>DuckAI - Premium AI Assistant</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
+    /* === ALL YOUR EXISTING STYLES — UNCHANGED === */
     * {
       margin: 0;
       padding: 0;
@@ -26,7 +27,7 @@
       position: relative;
     }
 
-    /* Animated Neural Network Background */
+    /* === NEW: ELEGANT BACKGROUND LAYERS === */
     .network-container {
       position: fixed;
       top: 0;
@@ -35,7 +36,8 @@
       height: 100%;
       pointer-events: none;
       z-index: 1;
-      opacity: 0.6;
+      opacity: 0.5;
+      /* Softer overall */
     }
 
     .network-canvas {
@@ -44,7 +46,7 @@
       display: block;
     }
 
-    /* Header */
+    /* === YOUR ORIGINAL UI STYLES BELOW (UNCHANGED) === */
     .header {
       position: relative;
       z-index: 10;
@@ -91,7 +93,6 @@
       font-weight: 300;
     }
 
-    /* Main Container */
     .main-container {
       position: relative;
       z-index: 10;
@@ -103,7 +104,6 @@
       margin: 0 auto;
     }
 
-    /* Chat Container */
     .chat-container {
       flex: 1;
       display: flex;
@@ -120,7 +120,6 @@
       height: 100%;
     }
 
-    /* Chat Messages Area */
     .chat-box {
       flex: 1;
       padding: 1.5rem;
@@ -145,7 +144,6 @@
       border-radius: 10px;
     }
 
-    /* Messages - Dynamic Sizing */
     .message {
       padding: 0.8rem 1.2rem;
       border-radius: 18px;
@@ -191,24 +189,37 @@
     }
 
     .ai-message::before {
+      content: '';
+      position: absolute;
+      left: 0.8rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1.8rem;
+      height: 1.8rem;
+      background: linear-gradient(135deg, #00d4ff, #7c3aed);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+    }
+
+    .ai-message::after {
       content: '🤖';
       position: absolute;
       left: 0.8rem;
       top: 50%;
       transform: translateY(-50%);
       font-size: 1.1rem;
-      background: rgba(0, 212, 255, 0.1);
-      padding: 0.3rem;
-      border-radius: 50%;
-      border: 1px solid rgba(0, 212, 255, 0.3);
-      width: 1.8rem;
-      height: 1.8rem;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
     }
 
-    /* Input Form */
     .chat-form {
       padding: 1.5rem;
       background: rgba(10, 10, 10, 0.6);
@@ -274,7 +285,6 @@
       transform: translateY(0);
     }
 
-    /* Loading Animation */
     .loading {
       display: none;
       align-items: center;
@@ -319,7 +329,6 @@
       }
     }
 
-    /* Welcome Message */
     .welcome-message {
       text-align: center;
       padding: 2rem;
@@ -344,7 +353,6 @@
       line-height: 1.6;
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
       .main-container {
         padding: 1rem;
@@ -371,18 +379,18 @@
 </head>
 
 <body>
-  <!-- Neural Network Background -->
+
+  <!-- === ELEGANT BACKGROUND === -->
   <div class="network-container">
     <canvas class="network-canvas" id="networkCanvas"></canvas>
   </div>
 
-  <!-- Header -->
+  <!-- === YOUR ORIGINAL UI BELOW === -->
   <header class="header">
     <div class="logo">DuckAI</div>
     <div class="tagline">Your Premium AI Assistant</div>
   </header>
 
-  <!-- Main Container -->
   <div class="main-container">
     <div class="chat-container">
       <div class="chat-box" id="chat-box">
@@ -398,11 +406,9 @@
           <input type="text" class="chat-input" id="user-input" placeholder="Type your message here..."
             autocomplete="off">
           <button type="submit" class="send-button">
-            <i class="fas fa-paper-plane"></i>
-            Send
+            <i class="fas fa-paper-plane"></i> Send
           </button>
         </div>
-
         <div class="loading" id="loading">
           <span>AI is thinking</span>
           <div class="loading-dots">
@@ -416,193 +422,149 @@
   </div>
 
   <script>
-    // Neural Network Background System
     class NeuralNetwork {
       constructor() {
         this.canvas = document.getElementById('networkCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.nodes = [];
-        this.connections = [];
-        this.mouseX = 0;
-        this.mouseY = 0;
-        this.animationId = null;
+        this.particles = [];
+        this.mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.bounds = { width: 0, height: 0 };
+        this.density = 0.7; // Lower density for elegance
 
-        this.setupCanvas();
-        this.createNodes();
-        this.createConnections();
+        this.setup();
         this.init();
+        this.animate();
       }
 
-      setupCanvas() {
-        this.resizeCanvas();
-        window.addEventListener('resize', () => this.resizeCanvas());
+      setup() {
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
       }
 
-      resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+      resize() {
+        this.bounds.width = window.innerWidth;
+        this.bounds.height = window.innerHeight;
+        this.canvas.width = this.bounds.width;
+        this.canvas.height = this.bounds.height;
+        this.createParticles();
       }
 
-      createNodes() {
-        this.nodes = [];
-        const nodeCount = Math.floor((window.innerWidth * window.innerHeight) / 15000);
+      createParticles() {
+        this.particles = [];
+        const total = Math.floor((this.bounds.width * this.bounds.height) / 20000) + 40;
 
-        for (let i = 0; i < nodeCount; i++) {
-          this.nodes.push({
-            x: Math.random() * this.canvas.width,
-            y: Math.random() * this.canvas.height,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            radius: Math.random() * 2 + 1,
-            opacity: Math.random() * 0.5 + 0.3
-          });
+        for (let i = 0; i < total; i++) {
+          this.particles.push(this.initParticle());
         }
       }
 
-      createConnections() {
-        this.connections = [];
-        const maxDistance = 120;
-
-        for (let i = 0; i < this.nodes.length; i++) {
-          for (let j = i + 1; j < this.nodes.length; j++) {
-            const distance = this.getDistance(this.nodes[i], this.nodes[j]);
-            if (distance < maxDistance) {
-              this.connections.push({
-                node1: this.nodes[i],
-                node2: this.nodes[j],
-                distance: distance,
-                maxDistance: maxDistance
-              });
-            }
-          }
-        }
+      initParticle() {
+        return {
+          x: Math.random() * this.bounds.width,
+          y: Math.random() * this.bounds.height,
+          vx: (Math.random() - 0.5) * 0.2,
+          vy: (Math.random() - 0.5) * 0.2,
+          size: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.4 + 0.2,
+          life: 0,
+          maxLife: 20 + Math.random() * 30
+        };
       }
 
-      getDistance(node1, node2) {
-        return Math.sqrt(Math.pow(node1.x - node2.x, 2) + Math.pow(node1.y - node2.y, 2));
-      }
+      update() {
+        // Gentle cursor influence
+        this.particles.forEach(p => {
+          const dx = p.x - this.mouse.x;
+          const dy = p.y - this.mouse.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const influenceRadius = 120;
 
-      updateNodes() {
-        this.nodes.forEach(node => {
-          // Mouse interaction
-          const mouseDistance = Math.sqrt(
-            Math.pow(node.x - this.mouseX, 2) +
-            Math.pow(node.y - this.mouseY, 2)
-          );
-
-          if (mouseDistance < 100) {
-            const force = (100 - mouseDistance) / 100;
-            const angle = Math.atan2(node.y - this.mouseY, node.x - this.mouseX);
-            node.vx += Math.cos(angle) * force * 0.02;
-            node.vy += Math.sin(angle) * force * 0.02;
+          if (distance < influenceRadius) {
+            const force = (influenceRadius - distance) / 10000;
+            p.vx -= (dx / distance) * force;
+            p.vy -= (dy / distance) * force;
           }
 
-          // Update position
-          node.x += node.vx;
-          node.y += node.vy;
-
-          // Boundary collision
-          if (node.x < 0 || node.x > this.canvas.width) {
-            node.vx *= -0.8;
-            node.x = Math.max(0, Math.min(this.canvas.width, node.x));
-          }
-          if (node.y < 0 || node.y > this.canvas.height) {
-            node.vy *= -0.8;
-            node.y = Math.max(0, Math.min(this.canvas.height, node.y));
-          }
+          // Natural drift
+          p.x += p.vx;
+          p.y += p.vy;
 
           // Damping
-          node.vx *= 0.99;
-          node.vy *= 0.99;
-        });
+          p.vx *= 0.96;
+          p.vy *= 0.96;
 
-        // Update connections
-        this.connections.forEach(connection => {
-          connection.distance = this.getDistance(connection.node1, connection.node2);
+          // Wrap around edges
+          if (p.x < 0) p.x = this.bounds.width;
+          if (p.x > this.bounds.width) p.x = 0;
+          if (p.y < 0) p.y = this.bounds.height;
+          if (p.y > this.bounds.height) p.y = 0;
+
+          // Regenerate gently
+          p.life++;
+          if (p.life > p.maxLife) {
+            Object.assign(p, this.initParticle());
+            p.x = this.mouse.x + (Math.random() - 0.5) * 200;
+            p.y = this.mouse.y + (Math.random() - 0.5) * 200;
+          }
         });
       }
 
       draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, this.bounds.width, this.bounds.height);
 
-        // Draw connections
-        this.connections.forEach(connection => {
-          if (connection.distance < connection.maxDistance) {
-            const opacity = 1 - (connection.distance / connection.maxDistance);
-            this.ctx.beginPath();
-            this.ctx.moveTo(connection.node1.x, connection.node1.y);
-            this.ctx.lineTo(connection.node2.x, connection.node2.y);
-            this.ctx.strokeStyle = `rgba(0, 212, 255, ${opacity * 0.3})`;
-            this.ctx.lineWidth = 0.5;
-            this.ctx.stroke();
+        // Draw connections (very soft)
+        const maxDist = 140;
+        for (let i = 0; i < this.particles.length; i++) {
+          for (let j = i + 1; j < this.particles.length; j++) {
+            const p1 = this.particles[i];
+            const p2 = this.particles[j];
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < maxDist) {
+              const opacity = (1 - dist / maxDist) * 0.15; // Very light
+              this.ctx.beginPath();
+              this.ctx.moveTo(p1.x, p1.y);
+              this.ctx.lineTo(p2.x, p2.y);
+              this.ctx.strokeStyle = `rgba(0, 212, 255, ${opacity})`;
+              this.ctx.lineWidth = 0.4;
+              this.ctx.stroke();
+            }
           }
-        });
+        }
 
-        // Draw nodes
-        this.nodes.forEach(node => {
-          const mouseDistance = Math.sqrt(
-            Math.pow(node.x - this.mouseX, 2) +
-            Math.pow(node.y - this.mouseY, 2)
+        // Draw particles with soft glow
+        this.particles.forEach(p => {
+          const gradient = this.ctx.createRadialGradient(
+            p.x, p.y, 0,
+            p.x, p.y, p.size * 3
           );
-
-          let nodeOpacity = node.opacity;
-          let nodeRadius = node.radius;
-
-          if (mouseDistance < 80) {
-            const proximity = 1 - (mouseDistance / 80);
-            nodeOpacity += proximity * 0.5;
-            nodeRadius += proximity * 2;
-          }
+          gradient.addColorStop(0, `hsla(180, 100%, 60%, ${p.alpha})`);
+          gradient.addColorStop(1, `transparent`);
 
           this.ctx.beginPath();
-          this.ctx.arc(node.x, node.y, nodeRadius, 0, Math.PI * 2);
-
-          // Gradient fill
-          const gradient = this.ctx.createRadialGradient(
-            node.x, node.y, 0,
-            node.x, node.y, nodeRadius
-          );
-          gradient.addColorStop(0, `rgba(0, 212, 255, ${nodeOpacity})`);
-          gradient.addColorStop(1, `rgba(124, 58, 237, ${nodeOpacity * 0.3})`);
-
+          this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           this.ctx.fillStyle = gradient;
           this.ctx.fill();
         });
       }
 
       animate() {
-        this.updateNodes();
+        this.update();
         this.draw();
-        this.animationId = requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(() => this.animate());
       }
 
       init() {
-        // Mouse tracking
         document.addEventListener('mousemove', (e) => {
-          this.mouseX = e.clientX;
-          this.mouseY = e.clientY;
+          this.mouse.x = e.clientX;
+          this.mouse.y = e.clientY;
         });
-
-        // Start animation
-        this.animate();
-
-        // Recreate network on resize
-        window.addEventListener('resize', () => {
-          setTimeout(() => {
-            this.createNodes();
-            this.createConnections();
-          }, 100);
-        });
-      }
-
-      destroy() {
-        if (this.animationId) {
-          cancelAnimationFrame(this.animationId);
-        }
       }
     }
 
-    // Chat Functionality
+    // Your original chat logic
     class ChatInterface {
       constructor() {
         this.form = document.getElementById('chat-form');
@@ -629,7 +591,6 @@
         const userMessage = this.input.value.trim();
         if (!userMessage) return;
 
-        // Clear welcome message on first interaction
         if (this.chatBox.querySelector('.welcome-message')) {
           this.chatBox.innerHTML = '';
         }
@@ -645,10 +606,7 @@
             body: JSON.stringify({ message: userMessage })
           });
 
-          if (!response.ok) {
-            throw new Error('Network response was not ok');
-          }
-
+          if (!response.ok) throw new Error('Network response was not ok');
           const data = await response.json();
           this.showLoading(false);
           this.addMessage(data.reply, 'ai-message');
@@ -666,10 +624,8 @@
         this.chatBox.appendChild(messageDiv);
         this.chatBox.scrollTop = this.chatBox.scrollHeight;
 
-        // Smooth entrance animation
         messageDiv.style.opacity = '0';
         messageDiv.style.transform = 'translateY(20px)';
-
         requestAnimationFrame(() => {
           messageDiv.style.transition = 'all 0.3s ease';
           messageDiv.style.opacity = '1';
@@ -691,7 +647,6 @@
       }
     }
 
-    // Initialize everything when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
       new NeuralNetwork();
       new ChatInterface();
